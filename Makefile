@@ -1,5 +1,5 @@
-obj-m += kvfs.o
-kvfs-objs := main.o
+obj-m += kvfsmod.o
+kvfsmod-objs := main.o kvfs.o
 BUILD_DIR = $(PWD)/build
 
 all:
@@ -10,4 +10,3 @@ $(BUILD_DIR):
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-	rm -rf $(BUILD_DIR)
