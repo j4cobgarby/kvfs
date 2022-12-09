@@ -2,6 +2,7 @@
 #include "linux/dcache.h"
 #include "linux/fs.h"
 #include "linux/printk.h"
+#include "linux/uidgid.h"
 
 struct file_system_type kvfs_type = {
     .owner = THIS_MODULE,
@@ -28,7 +29,8 @@ struct inode *mkinode(struct super_block *sb, int mode, const struct file_operat
     return inode;
 }
 
-struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, const char *name, struct file_operations *fops) {
+struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, 
+        const char *name, const struct file_operations *fops, int mode) {
     struct dentry *dentry;
     struct inode *inode;
 
@@ -36,7 +38,7 @@ struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, const 
     dentry = d_alloc_name(dir, name);
     if (!dentry) return 0;
 
-    inode = mkinode(sb, S_IFREG | 0666, fops);
+    inode = mkinode(sb, mode, fops);
     if (!inode) {
         dput(dentry);
         return 0;
@@ -74,8 +76,9 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
     }
 
     sb->s_root = root_dentry;
-    mkfile_generic(sb, root_dentry, "mkkey", &mkkey_fops);
-    mkfile_generic(sb, root_dentry, "delkey", &delkey_fops);
+
+    mkfile_generic(sb, root_dentry, "_mk", &mkkey_fops, S_IFREG | 0666);
+    mkfile_generic(sb, root_dentry, "_del", &delkey_fops, S_IFREG | 0666);
 
     return 0;
 }

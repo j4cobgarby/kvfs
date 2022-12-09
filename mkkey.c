@@ -25,7 +25,7 @@ ssize_t mkkey_write(struct file *filp, const char *buf, size_t count, loff_t *of
     if (copy_from_user(buf_krn, buf, bounded)) return -EFAULT;
     buf_krn[count] = '\0';
     
-    new_dentry = mkfile_generic(FILP_SB(filp), FILP_SB(filp)->s_root, buf_krn, &keyfile_fops);
+    new_dentry = mkfile_generic(FILP_SB(filp), FILP_SB(filp)->s_root, buf_krn, &keyfile_fops, S_IFREG | 0666);
 
     /* The private data is used to store the value corresponding to a key.
     It starts off at NULL because we don't know how much data the user wants to

@@ -44,9 +44,10 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent);
  * @param name Name for the file.
  * @return The dentry of the new file.
  */
-struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, const char *name, struct file_operations *fops);
+struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, 
+const char *name, const struct file_operations *fops, int mode);
 
-struct dentry *mksubdir(struct super_block *sb, struct dentry *dir, const char *name);
+struct dentry *mksubdir(struct super_block *sb, struct dentry *dir, const char *name, int mode);
 
 int keyfile_open(struct inode *inode, struct file *filp);
 ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset);
