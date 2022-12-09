@@ -17,13 +17,13 @@ MODULE_DESCRIPTION("A simple key-value store.");
 
 static int __init kvfs_init(void) 
 {
-    printk("kvfs initialising\n");
+    printk(KERN_INFO "Registering kvfs :)\n");
     return register_filesystem(&kvfs_type);
 }
 
 static void __exit kvfs_exit(void)
 {
-    printk("bye :)\n");
+    printk(KERN_INFO "Unregistering kvfs, bye!\n");
     unregister_filesystem(&kvfs_type);
 }
 

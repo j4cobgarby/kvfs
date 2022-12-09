@@ -1,4 +1,7 @@
 #include "kvfs.h"
+#include "linux/dcache.h"
+#include "linux/fs.h"
+#include "linux/printk.h"
 
 struct file_system_type kvfs_type = {
     .owner = THIS_MODULE,
@@ -10,13 +13,6 @@ struct file_system_type kvfs_type = {
 struct super_operations kvfs_sops = {
     .statfs = simple_statfs,
     .drop_inode = generic_delete_inode,
-};
-
-struct file_operations kvfs_fops = {
-    .open = kvfs_open,
-    .read = kvfs_read,
-    .write = kvfs_write,
-    .release = kvfs_release,
 };
 
 struct inode *mkinode(struct super_block *sb, int mode, const struct file_operations *fops) {
@@ -32,7 +28,7 @@ struct inode *mkinode(struct super_block *sb, int mode, const struct file_operat
     return inode;
 }
 
-struct dentry *mkfile(struct super_block *sb, struct dentry *dir, const char *name) {
+struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, const char *name, struct file_operations *fops) {
     struct dentry *dentry;
     struct inode *inode;
 
@@ -40,7 +36,7 @@ struct dentry *mkfile(struct super_block *sb, struct dentry *dir, const char *na
     dentry = d_alloc_name(dir, name);
     if (!dentry) return 0;
 
-    inode = mkinode(sb, S_IFREG | 0644, &kvfs_fops);
+    inode = mkinode(sb, S_IFREG | 0666, fops);
     if (!inode) {
         dput(dentry);
         return 0;
@@ -51,7 +47,6 @@ struct dentry *mkfile(struct super_block *sb, struct dentry *dir, const char *na
 }
 
 struct dentry *kvfs_mount(struct file_system_type *fst, int flags, const char *dev, void *data) {
-    printk("%s\n", dev);
     return mount_nodev(fst, flags, data, kvfs_fill_super);
 }
 
@@ -64,7 +59,7 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
     sb->s_magic = KVFS_MAGIC;
     sb->s_op = &kvfs_sops;
 
-    root = mkinode(sb, S_IFDIR | 0755, &simple_dir_operations);
+    root = mkinode(sb, S_IFDIR | 0775, &simple_dir_operations);
     inode_init_owner(sb->s_user_ns, root, NULL, S_IFDIR | 0755);
     if (!root) {
         return -ENOMEM;
@@ -79,34 +74,8 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
     }
 
     sb->s_root = root_dentry;
-    mkfile(sb, root_dentry, "file1");
+    mkfile_generic(sb, root_dentry, "mkkey", &mkkey_fops);
+    mkfile_generic(sb, root_dentry, "delkey", &delkey_fops);
 
-    return 0;
-}
-
-int kvfs_open(struct inode *inode, struct file *filp) {
-    printk(KERN_INFO "Opened a file.\n");
-    return 0;
-}
-
-ssize_t kvfs_read(struct file *filp, char *buf, size_t count, loff_t *offset) {
-    char tmp[13] = "Hello world\n";
-    if (*offset > 11) return 0;
-    if (count > 11 - *offset) count = 11 - *offset;
-    if (copy_to_user(buf, tmp + *offset, count)) return -EFAULT;
-
-    *offset += count;
-
-    printk(KERN_INFO "Reading.\n");
-    return count;
-}
-
-ssize_t kvfs_write(struct file *filp, const char *buf, size_t count, loff_t *offset) {
-    printk(KERN_INFO "Writing.\n");
-    return count;
-}
-
-int kvfs_release(struct inode *inode, struct file *filp) {
-    printk(KERN_INFO "Closing.\n");
     return 0;
 }

@@ -1,5 +1,5 @@
 obj-m += kvfsmod.o
-kvfsmod-objs := main.o kvfs.o
+kvfsmod-objs := main.o kvfs.o keyfile.o mkkey.o delkey.o
 BUILD_DIR = $(PWD)/build
 
 all:
