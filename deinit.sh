@@ -1,4 +1,4 @@
 #!/usr/bin/bash
 
-sudo umount mnt
+sudo umount --quiet mnt
 sudo rmmod kvfsmod

@@ -35,33 +35,138 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent);
 
 /**
  * @brief Makes an inode and a dentry, and connects the two together.
- * 
- * This function is used both for the keyfile files, as well as the control
- * files `mkkey` and `delkey`, by specifying different fops.
  *
  * @param sb Superblock of the particular mount.
  * @param dir Directory that the file should be in.
  * @param name Name for the file.
  * @return The dentry of the new file.
+ * 
+ * This function is used both for the keyfile files, as well as the control
+ * files `mkkey` and `delkey`, by specifying different fops.
  */
 struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir, 
-const char *name, const struct file_operations *fops, int mode);
+    const char *name, const struct file_operations *fops, int mode);
 
-struct dentry *mksubdir(struct super_block *sb, struct dentry *dir, const char *name, int mode);
-
+/**
+ * @brief Opens a keyfile.
+ * 
+ * @param inode The inode associated with the file.
+ * @param filp The file that's being opened.
+ * @return 0 if the file was opened successfully, otherwise an error code.
+ */
 int keyfile_open(struct inode *inode, struct file *filp);
+
+/**
+ * @brief Called when a user wants to get the value of a key.
+ * 
+ * @param filp The file that's being read.
+ * @param buf Where to store the value.
+ * @param count How many bytes of the value to read.
+ * @param offset Where to begin reading in the value.
+ * @return ssize_t How many bytes were read, or <0 if an error occurred.
+ * 
+ * The value of any given key is stored in the inode's i_private field, as a char*.
+ */
 ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset);
+
+/**
+ * @brief Called when the user wants to set the value of a given key.
+ * 
+ * @param filp The file being written to.
+ * @param buf Data to write into the key's value.
+ * @param count How many bytes to write.
+ * @param offset Unused - we'll read from the start of buf into value.
+ * @return ssize_t How many bytes were successfully written, or <0 if an error occurred.
+ * 
+ * The value of any given key is stored in the inode's i_private field, as a char*.
+ */
 ssize_t keyfile_write(struct file *filp, const char *buf, size_t count, loff_t *offset);
+
+/**
+ * @brief Called when the file's closed.
+ * 
+ * @param inode Its inode.
+ * @param filp The file.
+ * @return 0 on success. It should never fail.
+ */
 int keyfile_release(struct inode *inode, struct file *filp);
 
+/**
+ * @brief Opens the mkkey file.
+ * 
+ * @param inode The inode.
+ * @param filp The file.
+ * @return 0 on success. It should never fail.
+ * 
+ * The mkkey file is used to create new keys in the system.
+ */
 int mkkey_open(struct inode *inode, struct file *filp);
+
+/**
+ * @brief Cannot read the mkkey file, so this always fails.
+ * 
+ * @return -ENXIO
+ */
 ssize_t mkkey_read(struct file *filp, char *buf, size_t count, loff_t *offset);
+
+/**
+ * @brief Create a new key with the data being written as its name.
+ * 
+ * @param filp The file.
+ * @param buf Data for the key name.
+ * @param count The length of the name.
+ * @param offset Unused, takes name from the beginning of `buf`.
+ * @return The amount of bytes taken. This should be count.
+ *
+ * The brand new key's value is not explicitly initialised. To begin with, it
+ * will be NULL, and memory will be allocated as and when needed.
+ */
 ssize_t mkkey_write(struct file *filp, const char *buf, size_t count, loff_t *offset);
+
+/**
+ * @brief TODO: Maybe the key should be finalised on _this_ call, since that way a user
+ *              could in theory construct the key name in multiple writes.
+ * 
+ * @param inode The inode
+ * @param filp The file
+ * @return 0 on success, which should always be the case.
+ */
 int mkkey_release(struct inode *inode, struct file *filp);
 
+/**
+ * @brief Open the file to prepare to delete a key.
+ * 
+ * @param inode The inode
+ * @param filp The file
+ * @return 0 on success, which should always be the case.
+ */
 int delkey_open(struct inode *inode, struct file *filp);
+
+/**
+ * @brief Invalid operation, will fail.
+ * 
+ * @return -ENXIO
+ */
 ssize_t delkey_read(struct file *filp, char *buf, size_t count, loff_t *offset);
+
+/**
+ * @brief Delete a key of the given name.
+ * 
+ * @param filp This file.
+ * @param buf The name of the key.
+ * @param count Length of the name.
+ * @param offset Unused.
+ * @return The length of the name, otherwise a negative value for an error. -ENXIO if key not found.
+ */
 ssize_t delkey_write(struct file *filp, const char *buf, size_t count, loff_t *offset);
+
+/**
+ * @brief TODO: Maybe this should be the function where the key is actually deleted.
+ * 
+ * @param inode The inode.
+ * @param filp This file.
+ * @return 0 on success, which should always be the case.
+ */
 int delkey_release(struct inode *inode, struct file *filp);
 
 extern struct file_system_type kvfs_type;
