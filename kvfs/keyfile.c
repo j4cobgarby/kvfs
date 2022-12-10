@@ -1,5 +1,6 @@
 #include "kvfs.h"
 #include "linux/gfp.h"
+#include "linux/gfp_types.h"
 #include "linux/slab.h"
 
 #define REALLOC_FACTOR 2
@@ -17,15 +18,18 @@ int keyfile_open(struct inode *inode, struct file *filp) {
 }
 
 ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset) {
-    char **value = (char**)&(filp->f_inode->i_private);
-    size_t val_len = strlen(*value);    
+    struct kv_value **value = (struct kv_value**)&filp->f_inode->i_private;
+    size_t val_len;
 
-    if (!*value) return 0;
+    if (!*value || !(*value)->data) return 0;
+
+    val_len = strlen((*value)->data);
+
     if (*offset >= val_len) 
         return 0;
     if (*offset + count > val_len) 
         count = val_len - *offset;
-    if (copy_to_user(buf, *value + *offset, count)) 
+    if (copy_to_user(buf, (*value)->data + *offset, count)) 
         return -EFAULT;
 
     *offset += count;
@@ -34,14 +38,22 @@ ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset)
 }
 
 ssize_t keyfile_write(struct file *filp, const char *buf, size_t count, loff_t *offset) {
-    char **value = (char**)&(filp->f_inode->i_private);
-    
-    if (!(*value = krealloc(*value, 1 + REALLOC_FACTOR * count * sizeof(char), GFP_KERNEL))) 
-        return -ENOMEM;
-    if (copy_from_user(*value, buf, count)) 
+    struct kv_value **value = (struct kv_value**)&(filp->f_inode->i_private);
+    size_t new_size = 1 + REALLOC_FACTOR * count * sizeof(char);
+
+    if (!*value) {
+        *value = kmalloc(sizeof(struct kv_value), GFP_KERNEL);
+        (*value)->len = 0;
+    }
+
+    if (count > (*value)->len)
+        if (!((*value)->data = krealloc((*value)->data, new_size, GFP_KERNEL))) 
+            return -ENOMEM;
+    if (copy_from_user((*value)->data, buf, count))
         return -EFAULT;
 
-    (*value)[count] = '\0';
+    (*value)->len = new_size;
+    (*value)->data[count] = '\0';
 
     return count;
 }

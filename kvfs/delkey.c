@@ -26,17 +26,29 @@ ssize_t delkey_write(struct file *filp, const char *buf, size_t count, loff_t *o
     struct dentry *to_delete;
     struct qstr name_to_del;
 
-    if (copy_from_user(buf_krn, buf, bounded)) return -EFAULT;
+    if (copy_from_user(buf_krn, buf, bounded)) {
+        kfree(buf_krn);
+        return -EFAULT;
+    }
     buf_krn[count] = '\0';
     printk("name to delete: `%s`\n", buf_krn);
     name_to_del.len = strlen(buf_krn);
     name_to_del.name = buf_krn;
 
+    kfree(buf_krn);
+
     if (!(to_delete = d_hash_and_lookup(filp->f_inode->i_sb->s_root, &name_to_del))) {
         printk("Couldn't find entry to delete\n");
         return -ENXIO;
     } else {
+        struct kv_value *value = (struct kv_value*)to_delete->d_inode->i_private;
         printk("Deleting file %s\n", to_delete->d_name.name);
+
+        if (value) {
+            if (value->data) kfree(value->data);
+            kfree(value);
+        }
+
         d_delete(to_delete);
     }
     

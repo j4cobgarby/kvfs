@@ -9,6 +9,12 @@
 
 #define FILP_SB(filp) (filp->f_inode->i_sb)
 
+
+struct kv_value {
+    char *data;
+    size_t len;
+};
+
 /**
  * @brief Creates a kvfs mount.
  * 
@@ -169,10 +175,25 @@ ssize_t delkey_write(struct file *filp, const char *buf, size_t count, loff_t *o
  */
 int delkey_release(struct inode *inode, struct file *filp);
 
+int add_to_key(struct file *filp, const char *buf, size_t count, loff_t *offset, int n);
+
+int inckey_open(struct inode *inode, struct file *filp);
+ssize_t inckey_read(struct file *filp, char *buf, size_t count, loff_t *offset);
+ssize_t inckey_write(struct file *filp, const char *buf, size_t count, loff_t *offset);
+int inckey_release(struct inode *inode, struct file *filp);
+
+int deckey_open(struct inode *inode, struct file *filp);
+ssize_t deckey_read(struct file *filp, char *buf, size_t count, loff_t *offset);
+ssize_t deckey_write(struct file *filp, const char *buf, size_t count, loff_t *offset);
+int deckey_release(struct inode *inode, struct file *filp);
+
 extern struct file_system_type kvfs_type;
 extern struct super_operations kvfs_sops;
+
 extern struct file_operations keyfile_fops;
 extern struct file_operations mkkey_fops;
 extern struct file_operations delkey_fops;
+extern struct file_operations inckey_fops;
+extern struct file_operations deckey_fops;
 
 #endif

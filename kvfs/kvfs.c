@@ -79,6 +79,8 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
 
     mkfile_generic(sb, root_dentry, "_mk", &mkkey_fops, S_IFREG | 0666);
     mkfile_generic(sb, root_dentry, "_del", &delkey_fops, S_IFREG | 0666);
+    mkfile_generic(sb, root_dentry, "_inc", &inckey_fops, S_IFREG | 0666);
+    mkfile_generic(sb, root_dentry, "_dec", &inckey_fops, S_IFREG | 0666);
 
     return 0;
 }
