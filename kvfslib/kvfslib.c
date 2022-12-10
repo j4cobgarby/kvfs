@@ -23,6 +23,16 @@ struct kv_mnt kvfs_attach(const char *mntpoint) {
     sprintf(ret.decfile, "%s%s", mntpoint, DECFILE);
 
     ret.mntlen = len_mntpnt;
+
+    return ret;
+}
+
+void kvfs_free(struct kv_mnt *mnt) {
+    free(mnt->mkfile);
+    free(mnt->delfile);
+    free(mnt->incfile);
+    free(mnt->decfile);
+    free(mnt);
 }
 
 int key_exists(struct kv_mnt *mnt, const char *key) {

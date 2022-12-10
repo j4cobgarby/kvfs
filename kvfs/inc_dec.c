@@ -35,9 +35,14 @@ int add_to_key(struct file *filp, const char *buf, size_t count, loff_t *offset,
         return -ENXIO;
     } else {
         struct kv_value **value = (struct kv_value**)&to_add->d_inode->i_private;
-        char *str = (*value)->data;
-        size_t str_len = (*value)->len;
+        char *str;
+        size_t str_len;
         long value_int;
+
+        mutex_lock(&(*value)->mut);
+
+        str = (*value)->data;
+        str_len = (*value)->len;
 
         if (!value) return count;
         if (kstrtol(str, 0, &value_int) != 0) return count;
@@ -47,10 +52,9 @@ int add_to_key(struct file *filp, const char *buf, size_t count, loff_t *offset,
             if (!((*value)->data = krealloc((*value)->data, 16, GFP_KERNEL)))
                 return -ENOMEM;
 
-        printk("New value is %d\n", value_int);
-
         snprintf((*value)->data, MAX_LONG_SIZE, "%ld", value_int);
         (*value)->len = MAX_LONG_SIZE;
+        mutex_unlock(&(*value)->mut);
     }
 
     return count;

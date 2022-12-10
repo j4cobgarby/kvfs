@@ -23,6 +23,7 @@ ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset)
 
     if (!*value || !(*value)->data) return 0;
 
+    mutex_lock(&(*value)->mut);
     val_len = strlen((*value)->data);
 
     if (*offset >= val_len) 
@@ -31,6 +32,7 @@ ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset)
         count = val_len - *offset;
     if (copy_to_user(buf, (*value)->data + *offset, count)) 
         return -EFAULT;
+    mutex_unlock(&(*value)->mut);
 
     *offset += count;
 
@@ -46,6 +48,7 @@ ssize_t keyfile_write(struct file *filp, const char *buf, size_t count, loff_t *
         (*value)->len = 0;
     }
 
+    mutex_lock(&(*value)->mut);
     if (count > (*value)->len)
         if (!((*value)->data = krealloc((*value)->data, new_size, GFP_KERNEL))) 
             return -ENOMEM;
@@ -54,6 +57,7 @@ ssize_t keyfile_write(struct file *filp, const char *buf, size_t count, loff_t *
 
     (*value)->len = new_size;
     (*value)->data[count] = '\0';
+    mutex_unlock(&(*value)->mut);
 
     return count;
 }

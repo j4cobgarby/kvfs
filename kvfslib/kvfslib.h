@@ -18,6 +18,7 @@ struct kv_mnt {
 };
 
 struct kv_mnt kvfs_attach(const char *mntpoint);
+void kvfs_free(struct kv_mnt *);
 
 int key_exists(struct kv_mnt *, const char *key);
 int key_create(struct kv_mnt *, const char *key);

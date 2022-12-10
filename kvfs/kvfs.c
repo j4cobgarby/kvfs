@@ -1,6 +1,7 @@
 #include "kvfs.h"
 #include "linux/dcache.h"
 #include "linux/fs.h"
+#include "linux/mutex.h"
 #include "linux/printk.h"
 #include "linux/uidgid.h"
 
@@ -15,6 +16,9 @@ struct super_operations kvfs_sops = {
     .statfs = simple_statfs,
     .drop_inode = generic_delete_inode,
 };
+
+struct mutex mut_delete;
+struct mutex mut_create;
 
 struct inode *mkinode(struct super_block *sb, int mode, const struct file_operations *fops) {
     struct inode *inode;
@@ -34,7 +38,6 @@ struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir,
     struct dentry *dentry;
     struct inode *inode;
 
-
     dentry = d_alloc_name(dir, name);
     if (!dentry) return 0;
 
@@ -50,6 +53,9 @@ struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir,
 
 struct dentry *kvfs_mount(struct file_system_type *fst, int flags, const char *dev, void *data) {
     return mount_nodev(fst, flags, data, kvfs_fill_super);
+
+    mutex_init(&mut_delete);
+    mutex_init(&mut_create);
 }
 
 int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
