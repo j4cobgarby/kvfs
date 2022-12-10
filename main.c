@@ -1,13 +1,4 @@
-#include "linux/dcache.h"
-#include "linux/kern_levels.h"
-#include "linux/mm_types_task.h"
-#include "linux/printk.h"
-#include <linux/kernel.h>
-#include <linux/init.h>
 #include <linux/module.h>
-#include <linux/pagemap.h>
-#include <linux/fs.h>
-#include <asm/uaccess.h>
 
 #include "kvfs.h"
 
