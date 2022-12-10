@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
 make
-sudo insmod build/kvfsmod.ko
-mkdir -p mnt
-sudo mount -t kvfs none mnt
+insmod build/kvfsmod.ko
+mkdir -p /dev/kvs1
+mount -t kvfs none /dev/kvs1

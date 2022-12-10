@@ -20,6 +20,7 @@ ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset)
     char **value = (char**)&(filp->f_inode->i_private);
     size_t val_len = strlen(*value);    
 
+    if (!*value) return 0;
     if (*offset >= val_len) 
         return 0;
     if (*offset + count > val_len) 
