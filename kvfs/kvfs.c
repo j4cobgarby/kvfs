@@ -62,6 +62,7 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
     struct inode *root;
     struct dentry *root_dentry;
 
+    // 
     sb->s_blocksize = VMACACHE_SIZE;
     sb->s_blocksize_bits = VMACACHE_SIZE;
     sb->s_magic = KVFS_MAGIC;
@@ -83,10 +84,11 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
 
     sb->s_root = root_dentry;
 
-    mkfile_generic(sb, root_dentry, "_mk", &mkkey_fops, S_IFREG | 0666);
-    mkfile_generic(sb, root_dentry, "_del", &delkey_fops, S_IFREG | 0666);
-    mkfile_generic(sb, root_dentry, "_inc", &inckey_fops, S_IFREG | 0666);
-    mkfile_generic(sb, root_dentry, "_dec", &inckey_fops, S_IFREG | 0666);
+    // Make control files in the root directory
+    mkfile_generic(sb, root_dentry, "_mk", &mkkey_fops, S_IFREG | FILE_MODE);
+    mkfile_generic(sb, root_dentry, "_del", &delkey_fops, S_IFREG | FILE_MODE);
+    mkfile_generic(sb, root_dentry, "_inc", &inckey_fops, S_IFREG | FILE_MODE);
+    mkfile_generic(sb, root_dentry, "_dec", &inckey_fops, S_IFREG | FILE_MODE);
 
     return 0;
 }

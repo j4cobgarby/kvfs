@@ -8,6 +8,8 @@
 #define MAX_KEYLEN 64
 #define MAX_VALUELEN 512
 
+#define FILE_MODE 0666
+
 #define FILP_SB(filp) (filp->f_inode->i_sb)
 
 struct kv_value {

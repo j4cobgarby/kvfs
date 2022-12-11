@@ -40,7 +40,7 @@ ssize_t mkkey_write(struct file *filp, const char *buf, size_t count, loff_t *of
     mutex_unlock(&mut_create);
     
     printk(KERN_INFO "MKKEY making dentry\n");
-    new_dentry = mkfile_generic(FILP_SB(filp), FILP_SB(filp)->s_root, buf_krn, &keyfile_fops, S_IFREG | 0666);
+    new_dentry = mkfile_generic(FILP_SB(filp), FILP_SB(filp)->s_root, buf_krn, &keyfile_fops, S_IFREG | FILE_MODE);
 
     printk(KERN_INFO "Made dentry\n");
     { // Initialise values in the key's private data
