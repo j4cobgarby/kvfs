@@ -72,7 +72,8 @@ struct dentry *kvfs_mount(struct file_system_type *fst, int flags, const char *d
 
     ret = mount_nodev(fst, flags, data, kvfs_fill_super);
 
-    // Make control files in the root directory
+    // Make control files in the root directory.
+    // Setting their gid. mkkey's gid is passed on to any keys it creates
 
     key = mkfile_generic(ret->d_sb, ret->d_sb->s_root, "_mk", &mkkey_fops, S_IFREG | FILE_MODE);
     key->d_inode->i_gid = gidt;
@@ -93,7 +94,6 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
     struct inode *root;
     struct dentry *root_dentry;
 
-    // 
     sb->s_blocksize = VMACACHE_SIZE;
     sb->s_blocksize_bits = VMACACHE_SIZE;
     sb->s_magic = KVFS_MAGIC;

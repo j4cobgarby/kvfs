@@ -32,12 +32,15 @@ int add_to_key(struct file *filp, const char *buf, size_t count, loff_t *offset,
     name_to_add.name = buf_krn;
 
     if (!(to_add = d_hash_and_lookup(filp->f_inode->i_sb->s_root, &name_to_add))) {
+        kfree(buf_krn);
         return -ENXIO;
     } else {
         struct kv_value **value = (struct kv_value**)&to_add->d_inode->i_private;
         char *str;
         size_t str_len;
         long value_int;
+        
+        kfree(buf_krn);
 
         printk(KERN_INFO "Locking mutex (inc_dec)\n");
         mutex_lock(&(*value)->mut);

@@ -5,24 +5,26 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct kv_mnt kvfs_attach(const char *mntpoint) {
-    struct kv_mnt ret;
+struct kv_mnt *kvfs_attach(const char *mntpoint) {
+    struct kv_mnt *ret;
     size_t len_mntpnt = strlen(mntpoint);
 
-    ret.mntpoint = calloc(len_mntpnt, sizeof(char));
+    ret = malloc(sizeof(struct kv_mnt));
 
-    ret.mkfile  = calloc(len_mntpnt + strlen(MKFILE), sizeof(char));
-    ret.delfile = calloc(len_mntpnt + strlen(DELFILE), sizeof(char));
-    ret.incfile = calloc(len_mntpnt + strlen(INCFILE), sizeof(char));
-    ret.decfile = calloc(len_mntpnt + strlen(DECFILE), sizeof(char));
+    ret->mntpoint = calloc(len_mntpnt, sizeof(char));
 
-    strcpy(ret.mntpoint, mntpoint);
-    sprintf(ret.mkfile, "%s%s", mntpoint, MKFILE);
-    sprintf(ret.delfile, "%s%s", mntpoint, DELFILE);
-    sprintf(ret.incfile, "%s%s", mntpoint, INCFILE);
-    sprintf(ret.decfile, "%s%s", mntpoint, DECFILE);
+    ret->mkfile  = calloc(len_mntpnt + strlen(MKFILE), sizeof(char));
+    ret->delfile = calloc(len_mntpnt + strlen(DELFILE), sizeof(char));
+    ret->incfile = calloc(len_mntpnt + strlen(INCFILE), sizeof(char));
+    ret->decfile = calloc(len_mntpnt + strlen(DECFILE), sizeof(char));
 
-    ret.mntlen = len_mntpnt;
+    strcpy(ret->mntpoint, mntpoint);
+    sprintf(ret->mkfile, "%s%s", mntpoint, MKFILE);
+    sprintf(ret->delfile, "%s%s", mntpoint, DELFILE);
+    sprintf(ret->incfile, "%s%s", mntpoint, INCFILE);
+    sprintf(ret->decfile, "%s%s", mntpoint, DECFILE);
+
+    ret->mntlen = len_mntpnt;
 
     return ret;
 }
@@ -38,6 +40,7 @@ void kvfs_free(struct kv_mnt *mnt) {
 int key_exists(struct kv_mnt *mnt, const char *key) {
     char *keypath = calloc(strlen(key) + mnt->mntlen, sizeof(char));
     sprintf(keypath, "%s/%s", mnt->mntpoint, key);
+    printf("Keyfile: %s => %d\n", keypath, access(keypath, F_OK));
     return access(keypath, F_OK);
 }
 
