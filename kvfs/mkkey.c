@@ -36,25 +36,30 @@ ssize_t mkkey_write(struct file *filp, const char *buf, size_t count, loff_t *of
         // Key by that name already exists
         mutex_unlock(&mut_create);
         return -ENXIO;
-    }
-    mutex_unlock(&mut_create);
-    
-    printk(KERN_INFO "MKKEY making dentry\n");
-    new_dentry = mkfile_generic(FILP_SB(filp), FILP_SB(filp)->s_root, buf_krn, &keyfile_fops, S_IFREG | FILE_MODE);
-
-    printk(KERN_INFO "Made dentry\n");
-    { // Initialise values in the key's private data
-        struct kv_value **value = (struct kv_value**)&new_dentry->d_inode->i_private;
+    } else {
+        mutex_unlock(&mut_create);
         
-        *value = kmalloc(sizeof(struct kv_value), GFP_KERNEL);
+        printk(KERN_INFO "MKKEY making dentry\n");
+        new_dentry = mkfile_generic(FILP_SB(filp), FILP_SB(filp)->s_root, buf_krn, &keyfile_fops, S_IFREG | FILE_MODE);
 
-        (*value)->len = 0;
-        mutex_init(&(*value)->mut);
-        (*value)->data = NULL;
+        printk(KERN_INFO "Made dentry\n");
+        { 
+            // Initialise values in the key's private data
+            struct kv_value **value = (struct kv_value**)&new_dentry->d_inode->i_private;
+            
+            *value = kmalloc(sizeof(struct kv_value), GFP_KERNEL);
+
+            (*value)->len = 0;
+            mutex_init(&(*value)->mut);
+            (*value)->data = NULL;
+
+            // Copy the mkkey file's gid to the new key file
+            new_dentry->d_inode->i_gid = filp->f_inode->i_gid;
+        }
+        printk(KERN_INFO "MKKEY end\n");
+        
+        return count;
     }
-    printk(KERN_INFO "MKKEY end\n");
-    
-    return count;
 }
 
 int mkkey_release(struct inode *inode, struct file *filp) {

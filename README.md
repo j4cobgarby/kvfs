@@ -50,3 +50,9 @@ To build, you will need to have:
 
  - A C compiler toolchain (we use gcc)
  - The linux headers/module build scripts (which on Arch linux are in the package `linux-headers`)
+
+## Permissions
+
+When mounting a kvfs instance, you can specify a GID. This GID will be given read/write permission to all the files within that specific instance. Kvfs will read this value from the mount options string, and it's the only mount option it accepts.
+
+Running `init.sh` will mount an instance at /dev/kvs1, with the GID of the group "kvfs" as its mount option.

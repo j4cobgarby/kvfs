@@ -8,7 +8,7 @@
 #define MAX_KEYLEN 64
 #define MAX_VALUELEN 512
 
-#define FILE_MODE 0666
+#define FILE_MODE 0660
 
 #define FILP_SB(filp) (filp->f_inode->i_sb)
 

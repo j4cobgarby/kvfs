@@ -1,9 +1,11 @@
 #include "kvfs.h"
 #include "linux/dcache.h"
 #include "linux/fs.h"
+#include "linux/gfp_types.h"
 #include "linux/mutex.h"
 #include "linux/printk.h"
 #include "linux/uidgid.h"
+#include "linux/kstrtox.h"
 
 struct file_system_type kvfs_type = {
     .owner = THIS_MODULE,
@@ -30,6 +32,7 @@ struct inode *mkinode(struct super_block *sb, int mode, const struct file_operat
     inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
     inode->i_fop = fops;
     inode->i_ino = get_next_ino();
+
     return inode;
 }
 
@@ -52,10 +55,38 @@ struct dentry *mkfile_generic(struct super_block *sb, struct dentry *dir,
 }
 
 struct dentry *kvfs_mount(struct file_system_type *fst, int flags, const char *dev, void *data) {
-    return mount_nodev(fst, flags, data, kvfs_fill_super);
+    struct dentry *ret;
+    struct dentry *key;
+
+    int gid;
+    kgid_t gidt;
 
     mutex_init(&mut_delete);
     mutex_init(&mut_create);
+
+    if (!data || kstrtoint((char*)data, 10, &gid) != 0) gid = 0;
+    gidt = KGIDT_INIT(gid);
+
+    printk(KERN_INFO "data = %s\n", (char*)data);
+    printk(KERN_INFO "File GID = %d\n", gid);
+
+    ret = mount_nodev(fst, flags, data, kvfs_fill_super);
+
+    // Make control files in the root directory
+
+    key = mkfile_generic(ret->d_sb, ret->d_sb->s_root, "_mk", &mkkey_fops, S_IFREG | FILE_MODE);
+    key->d_inode->i_gid = gidt;
+
+    key = mkfile_generic(ret->d_sb, ret->d_sb->s_root, "_del", &delkey_fops, S_IFREG | FILE_MODE);
+    key->d_inode->i_gid = gidt;
+
+    key = mkfile_generic(ret->d_sb, ret->d_sb->s_root, "_inc", &inckey_fops, S_IFREG | FILE_MODE);
+    key->d_inode->i_gid = gidt;
+
+    key = mkfile_generic(ret->d_sb, ret->d_sb->s_root, "_dec", &inckey_fops, S_IFREG | FILE_MODE);
+    key->d_inode->i_gid = gidt;
+
+    return ret;
 }
 
 int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
@@ -83,12 +114,6 @@ int kvfs_fill_super(struct super_block *sb, void *data, int silent) {
     }
 
     sb->s_root = root_dentry;
-
-    // Make control files in the root directory
-    mkfile_generic(sb, root_dentry, "_mk", &mkkey_fops, S_IFREG | FILE_MODE);
-    mkfile_generic(sb, root_dentry, "_del", &delkey_fops, S_IFREG | FILE_MODE);
-    mkfile_generic(sb, root_dentry, "_inc", &inckey_fops, S_IFREG | FILE_MODE);
-    mkfile_generic(sb, root_dentry, "_dec", &inckey_fops, S_IFREG | FILE_MODE);
 
     return 0;
 }

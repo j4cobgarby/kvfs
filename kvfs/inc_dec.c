@@ -39,22 +39,35 @@ int add_to_key(struct file *filp, const char *buf, size_t count, loff_t *offset,
         size_t str_len;
         long value_int;
 
+        printk(KERN_INFO "Locking mutex (inc_dec)\n");
         mutex_lock(&(*value)->mut);
+        printk(KERN_INFO "Locked (inc_dec)\n");
 
         str = (*value)->data;
         str_len = (*value)->len;
 
-        if (!value) return count;
-        if (kstrtol(str, 0, &value_int) != 0) return count;
+        if (!value) {
+            mutex_unlock(&(*value)->mut);
+            return count;
+        }
+
+        if (kstrtol(str, 0, &value_int) != 0) {
+            mutex_unlock(&(*value)->mut);
+            return count;
+        }
 
         value_int += n;
-        if (str_len <= MAX_LONG_SIZE)
-            if (!((*value)->data = krealloc((*value)->data, 16, GFP_KERNEL)))
+        if (str_len <= MAX_LONG_SIZE) {
+            if (!((*value)->data = krealloc((*value)->data, 16, GFP_KERNEL))) {
+                mutex_unlock(&(*value)->mut);
                 return -ENOMEM;
+            }
+        }
 
         snprintf((*value)->data, MAX_LONG_SIZE, "%ld", value_int);
         (*value)->len = MAX_LONG_SIZE;
         mutex_unlock(&(*value)->mut);
+        printk(KERN_INFO "Unlocked (inc_dec)\n");
     }
 
     return count;
@@ -69,7 +82,8 @@ ssize_t inckey_read(struct file *filp, char *buf, size_t count, loff_t *offset) 
 }
 
 ssize_t inckey_write(struct file *filp, const char *buf, size_t count, loff_t *offset) {
-    return add_to_key(filp, buf, count, offset, 1);
+    add_to_key(filp, buf, count, offset, 1);
+    return count;
 }
 
 int inckey_release(struct inode *inode, struct file *filp) {
@@ -86,7 +100,8 @@ ssize_t deckey_read(struct file *filp, char *buf, size_t count, loff_t *offset) 
 }
 
 ssize_t deckey_write(struct file *filp, const char *buf, size_t count, loff_t *offset) {
-    return add_to_key(filp, buf, count, offset, -1);
+    add_to_key(filp, buf, count, offset, -1);
+    return count;
 }
 
 int deckey_release(struct inode *inode, struct file *filp) {

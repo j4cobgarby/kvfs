@@ -23,16 +23,23 @@ ssize_t keyfile_read(struct file *filp, char *buf, size_t count, loff_t *offset)
 
     if (!*value || !(*value)->data) return 0;
 
+    printk(KERN_INFO "Locking mutex (keyfile)\n");
     mutex_lock(&(*value)->mut);
+    printk(KERN_INFO "Locked mutex (keyfile)\n");
     val_len = strlen((*value)->data);
 
-    if (*offset >= val_len) 
+    if (*offset >= val_len) {
+        mutex_unlock(&(*value)->mut);
         return 0;
+    }
     if (*offset + count > val_len) 
         count = val_len - *offset;
-    if (copy_to_user(buf, (*value)->data + *offset, count)) 
+    if (copy_to_user(buf, (*value)->data + *offset, count)) {
+        mutex_unlock(&(*value)->mut);
         return -EFAULT;
+    }
     mutex_unlock(&(*value)->mut);
+    printk(KERN_INFO "Unocked mutex (keyfile)\n");
 
     *offset += count;
 
@@ -49,11 +56,16 @@ ssize_t keyfile_write(struct file *filp, const char *buf, size_t count, loff_t *
     }
 
     mutex_lock(&(*value)->mut);
-    if (count > (*value)->len)
-        if (!((*value)->data = krealloc((*value)->data, new_size, GFP_KERNEL))) 
+    if (count > (*value)->len) {
+        if (!((*value)->data = krealloc((*value)->data, new_size, GFP_KERNEL))) {
+            mutex_unlock(&(*value)->mut);
             return -ENOMEM;
-    if (copy_from_user((*value)->data, buf, count))
+        }
+    }
+    if (copy_from_user((*value)->data, buf, count)) {
+        mutex_unlock(&(*value)->mut);
         return -EFAULT;
+    }
 
     (*value)->len = new_size;
     (*value)->data[count] = '\0';
